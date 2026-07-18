@@ -1,0 +1,10 @@
+Flask
+gunicorn
+pandas
+numpy
+joblib
+xgboost
+scikit-learn
+imbalanced-learn
+shap
+openpyxl

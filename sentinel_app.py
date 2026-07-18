@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify
 import pandas as pd
 import joblib
+import traceback
+
+
 
 from shap_explainer import explain_prediction
 
@@ -61,17 +64,6 @@ def calculate_risk_score(data):
 # Home
 # -------------------------
 
-@app.route("/")
-def home():
-
-    return jsonify({
-        "message": "Microsoft Sentinel AI Incident Prioritization API Running"
-    })
-
-# -------------------------
-# Predict
-# -------------------------
-
 @app.route("/predict", methods=["POST"])
 def predict():
 
@@ -92,28 +84,17 @@ def predict():
         for col in categorical_columns:
             df[col] = feature_encoders[col].transform(df[col])
 
-        # -------------------------
         # Prediction
-        # -------------------------
-
         prediction = model.predict(df)[0]
-
         probability = model.predict_proba(df)[0]
 
         severity = severity_encoder.inverse_transform([prediction])[0]
-
         confidence = round(float(max(probability)) * 100, 2)
 
-        # -------------------------
         # Risk Score
-        # -------------------------
-
         risk_score = calculate_risk_score(data)
 
-        # -------------------------
         # Priority + Reasons
-        # -------------------------
-
         if severity == "High":
 
             priority = "P1"
@@ -146,29 +127,27 @@ def predict():
                 "FailedLoginCount"
             ]
 
-        # Tree SHAP (for debugging / future use)
+        # SHAP
         shap_reasons = explain_prediction(df)
         print("Tree SHAP:", shap_reasons)
 
         return jsonify({
-
             "severity": severity,
             "confidence": confidence,
             "risk_score": risk_score,
             "priority": priority,
             "recommended_action": action,
             "top_reasons": reasons
-
         })
 
     except Exception as e:
 
+        traceback.print_exc()
+
         return jsonify({
-
             "error": str(e)
-
         }), 500
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+ app.run(debug=True)
